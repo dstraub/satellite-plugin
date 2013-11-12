@@ -37,7 +37,7 @@ There is a special build step to push new packages in an software channel.
 
 ![image](doc/build-push.jpg)
 
-- "Path Pattern" is the path to search for new RPM packages (this is a ant-like pattern, not a regular expression)
+- "Path Pattern" is the path to search for new RPM packages (is a ant-like pattern, no regular expression)
 
 ![image](doc/build-pushed.jpg)
 
