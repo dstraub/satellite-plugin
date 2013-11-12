@@ -15,6 +15,7 @@ The plugin provides the following functions:
 -  editing and updating configuration files from configuration channels
 -  executing scripts on remote systems within a system group (via Satellite scheduling/osad or ssh)
 
+The plugin does not use external programs, which means it can be used on any machine (without packages like rhnpush, spacewalk-backend-libs).
 
 Installation
 ------------
@@ -32,7 +33,13 @@ Configuration is done via the Jenkins main configuration page:
 
 Push Packages
 -------------
-todo ...
+There is a special build step to push new packages in an software channel.
+
+![image](doc/build-push.jpg)
+
+- "Path Pattern" is the path to search for new RPM packages (this is a ant-like pattern, not a regular expression)
+
+![image](doc/build-pushed.jpg)
 
 Staging Packages
 -------------

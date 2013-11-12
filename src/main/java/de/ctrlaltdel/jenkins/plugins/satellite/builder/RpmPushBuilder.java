@@ -134,7 +134,7 @@ public class RpmPushBuilder extends Builder {
         PrintStream ps = listener.getLogger();
         ps.println("[INFO] ------------------------------------------------------------------------");
         ps.println("[INFO] Push to '" + channel + '\'');
-        ps.println("[INFO] ------------------------------------------------------------------------\n");
+        ps.println("[INFO] ------------------------------------------------------------------------");
     }
 
     public String getArtifacts() {
