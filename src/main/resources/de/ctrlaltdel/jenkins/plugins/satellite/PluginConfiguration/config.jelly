@@ -1,0 +1,40 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+ 
+  <!-- PluginConfiguration -->
+  
+  <f:section title="Satellite Configuration">
+	<f:entry title="URL" field="url">
+    	<f:textbox />
+  	</f:entry>
+
+  	<f:entry title="User" field="user">
+    	<f:textbox />
+  	</f:entry>
+
+  	<f:entry title="Password" field="password">
+    	<f:password />
+  	</f:entry>
+  	
+  	<f:validateButton title="Test Connection" progress="Testing..."
+   		method="testConnection" with="url,user,password" />
+
+  	<f:entry title="Configuration Path Pattern" field="configPathPattern">
+    	<f:textbox />
+  	</f:entry>
+
+  	<f:entry title="SSH-User" field="sshUser">
+    	<f:textbox />
+  	</f:entry>
+
+  	<f:entry title="SSH-Password" field="sshPassword">
+    	<f:password />
+  	</f:entry>
+
+  	<f:entry title="SSH-Keypath" field="sshKeyPath">
+    	<f:textbox />
+  	</f:entry>
+  	
+  </f:section>
+
+  
+</j:jelly>

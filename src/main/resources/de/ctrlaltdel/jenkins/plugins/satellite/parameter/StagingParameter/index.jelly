@@ -1,0 +1,18 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
+	
+	<!-- Staging -->
+	
+	<f:section title="Staging from ${it.sourceChannel} to ${it.targetChannel}">
+	<f:entry title="Package">
+		<div name="parameter">
+			<input type="hidden" name="name" value="${it.name}" />
+            <select name="value">
+              <j:forEach var="value" items="${it.packages}">
+                <f:option selected="${it.value==value}">${value}</f:option>
+              </j:forEach>
+            </select>
+		</div>
+	</f:entry>
+	</f:section>
+		
+</j:jelly>

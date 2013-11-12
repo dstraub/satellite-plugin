@@ -1,0 +1,21 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+	<!-- StagingParameter -->
+	
+	<f:entry title="Source Channel" field="sourceChannel">
+		<f:select />
+  	</f:entry>
+
+	<f:entry title="Target Channel" field="targetChannel">
+		<f:select />
+  	</f:entry>
+
+	<f:entry title="Package Pattern" field="packagePattern">
+		<f:textbox />
+  	</f:entry>
+
+	<f:entry title="Include Snapshots" field="includeSnapshots">
+		<f:checkbox />
+  	</f:entry>
+  
+</j:jelly>

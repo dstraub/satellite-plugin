@@ -1,0 +1,14 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
+	
+	<!-- UpdateConfig -->
+	
+	<f:section title="Config File: ${it.configPath} [${it.configChannel}]">
+	<f:entry>
+		<div name="parameter">
+			<input type="hidden" name="name" value="${it.name}" />
+            <f:expandableTextbox value="${it.value}" name="value" />
+		</div>
+	</f:entry>
+	</f:section>
+		
+</j:jelly>

@@ -1,0 +1,14 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+	<!-- UpdateConfigParameter -->
+	 
+	<f:entry title="Configuration Channel" field="configChannel">
+		<f:select onchange="updateListBox('configPath','${request.contextPath}/satellite/loadConfigFiles?value='+encode(this.value))"/>
+  	</f:entry>
+
+	<f:entry title="Configuration File" field="configPath">
+		<f:select id="configPath"/>
+  	</f:entry>
+
+  
+</j:jelly>
