@@ -1,4 +1,49 @@
-satellite-plugin
-================
-
 Jenkins Satellite Plugin
+========================
+
+
+Redhat Satellite (or Spacewalk) is a powerful system management tool. In many projects, we use Jenkins for continous build processes and RHN Satellite for distribution of the created software packages. For this we used a combination of shell and python scripts, what works well - more or less ...  
+
+But with this approach, Jenkins and their users was been given too much rights / permission to deal with the satellite (for example, the Satellite has no fine-grained permissions for config channel). Some administrators were not happy about this facts...
+
+Finally, to stop this sprawling scripting tool box, we had decided to develop this Jenkins plugin.
+
+The plugin provides the following functions:
+
+-  pushes packages (rpm's) in software channels (rpm's were build by the [maven-rpm-plugin](http://mojo.codehaus.org/rpm-maven-plugin/))
+-  staging : copying packages between software channels
+-  editing and updating configuration files from config-channels
+-  executing scripts on remote systems within a system group (via Satellite scheduling/osad or ssh)
+
+
+Installation
+------------
+Install the satellite.hpi like all others plugins, see [here](https://wiki.jenkins-ci.org/display/JENKINS/Plugins#Plugins-Byhand)
+  
+Configuration
+-------------
+Configuration is done via the Jenkins main configuration page:
+
+
+![image](doc/satellite-config.jpg)
+
+- with "Configuration Path Pattern" it is possible to limit access for files from config channels
+- if ssh instead of satellite scheduling is used for remote commands, user and password/keyfile  for system access is required
+
+Push Packages
+-------------
+todo ...
+
+Staging Packages
+-------------
+todo ...
+
+Updating Config Files
+---------------------
+todo ...
+
+Executing Scripts
+-----------------
+todo ...
+
+
