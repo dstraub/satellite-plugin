@@ -19,77 +19,75 @@ import de.ctrlaltdel.jenkins.plugins.satellite.builder.SatelliteTaskBuilder.Upda
 
 /**
  * UpdateConfigParameter
- * 
  * @author ds
  */
 public class UpdateConfigParameter extends SimpleParameterDefinition {
 
-	private final String configChannel;
-	private final String configPath;
+    private final String configChannel;
+    private final String configPath;
 
-	@DataBoundConstructor
-	public UpdateConfigParameter(String configChannel, String configPath) {
-		super(SatelliteTask.UPDATE_CONFIG.name(), "");
-		this.configChannel = configChannel;
-		this.configPath = configPath;
-	}
+    @DataBoundConstructor
+    public UpdateConfigParameter(String configChannel, String configPath) {
+        super(SatelliteTask.UPDATE_CONFIG.name(), "");
+        this.configChannel = configChannel;
+        this.configPath = configPath;
+    }
 
-	@Override
-	public ParameterValue createValue(String value) {
-		return new StringParameterValue(getName(), value);
-	}
+    @Override
+    public ParameterValue createValue(String value) {
+        return new StringParameterValue(getName(), value);
+    }
 
-	@Override
-	public ParameterValue createValue(StaplerRequest req, JSONObject jo) {
-		StringParameterValue value = req.bindJSON(StringParameterValue.class, jo);
-		return new StringParameterValue(value.getName(), 
-				                        new UpdateConfigTaskParameter(configChannel, configPath, value.value).toString());
-	}
+    @Override
+    public ParameterValue createValue(StaplerRequest req, JSONObject jo) {
+        StringParameterValue value = req.bindJSON(StringParameterValue.class, jo);
+        return new StringParameterValue(value.getName(), new UpdateConfigTaskParameter(configChannel, configPath, value.value).toString());
+    }
 
-	public String getConfigChannel() {
-		return configChannel;
-	}
+    public String getConfigChannel() {
+        return configChannel;
+    }
 
-	public String getConfigPath() {
-		return configPath;
-	}
+    public String getConfigPath() {
+        return configPath;
+    }
 
-	public String getValue() {
-		return SatelliteConnection.create().forOneCall().readConfig(configChannel, configPath);
-	}
+    public String getValue() {
+        return SatelliteConnection.create().forOneCall().readConfig(configChannel, configPath);
+    }
 
-	@Extension
-	public static class DescriptorImpl extends ParameterDescriptor {
+    @Extension
+    public static class DescriptorImpl extends ParameterDescriptor {
 
-		private String firstChannel;
+        private String firstChannel;
 
-		@Override
-		public String getDisplayName() {
-			return "Satellite Update Configuration";
-		}
+        @Override
+        public String getDisplayName() {
+            return "Satellite Update Configuration";
+        }
 
-		public ListBoxModel doFillConfigChannelItems() {
-			List<String> channels = SatelliteConnection.create().forOneCall().listConfigChannels();
-			firstChannel = channels.get(0);
-			ListBoxModel listBoxModel = new ListBoxModel();
-			for (String channel : channels) {
-				listBoxModel.add(channel);
-			}
-			return listBoxModel;
-		}
+        public ListBoxModel doFillConfigChannelItems() {
+            List<String> channels = SatelliteConnection.create().forOneCall().listConfigChannels();
+            firstChannel = channels.get(0);
+            ListBoxModel listBoxModel = new ListBoxModel();
+            for (String channel : channels) {
+                listBoxModel.add(channel);
+            }
+            return listBoxModel;
+        }
 
-		public ListBoxModel doFillConfigPathItems() {
-			if (firstChannel == null) {
-				return null;
-			}
-			List<String> channels = SatelliteConnection.create().forOneCall().listConfigPaths(firstChannel);
-			ListBoxModel listBoxModel = new ListBoxModel();
-			for (String channel : channels) {
-				listBoxModel.add(channel);
-			}
-			return listBoxModel;
-		}
+        public ListBoxModel doFillConfigPathItems() {
+            if (firstChannel == null) {
+                return null;
+            }
+            List<String> channels = SatelliteConnection.create().forOneCall().listConfigPaths(firstChannel);
+            ListBoxModel listBoxModel = new ListBoxModel();
+            for (String channel : channels) {
+                listBoxModel.add(channel);
+            }
+            return listBoxModel;
+        }
 
-	}
+    }
 
 }
