@@ -29,7 +29,7 @@ Configuration is done via the Jenkins main configuration page:
 ![image](img/satellite-config.jpg)
 
 - with "Configuration Path Pattern" it is possible to limit access for files from config channels
-- if ssh instead of satellite scheduling is used for remote commands, user and password/keyfile  for system access is required
+- if SSH is used instead of Satellite Scheduling for executing remote commands, user and password/keyfile for system access
 
 Push Packages
 -------------
