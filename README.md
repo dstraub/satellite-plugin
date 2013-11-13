@@ -26,7 +26,7 @@ Configuration
 Configuration is done via the Jenkins main configuration page:
 
 
-![image](doc/satellite-config.jpg)
+![image](img/satellite-config.jpg)
 
 - with "Configuration Path Pattern" it is possible to limit access for files from config channels
 - if ssh instead of satellite scheduling is used for remote commands, user and password/keyfile  for system access is required
@@ -35,22 +35,92 @@ Push Packages
 -------------
 There is a special build step to push new packages in an software channel.
 
-![image](doc/build-push.jpg)
+![image](img/push-build.jpg)
 
 - "Path Pattern" is the path to search for new RPM packages (is a ant-like pattern, no regular expression)
 
-![image](doc/build-pushed.jpg)
+![image](img/push-success.jpg)
+
+The name of the pushed package is stored in the build variables with the key **RPM_PACKAGE** and can be used in other build steps (for example executing an script).
 
 Staging Packages
 -------------
-todo ...
+Staging (in this context) is the process when packets are copied from one channel to another. For if a application has passed all qualitiy assurance tests, then this package is ready for production and should be copied to the production software channel.
+
+For such tasks we have an 'generic' build step **Satellite Task**. This build steps searches in the current build variables for knowing keys and performs the associated action. For creating such variables in a build we have some customized *build parameters*
+
+To copy packages between software channel:  
+
+- create a *parameterized build* and add a **Satellite Staging** parameter
+
+![image](img/staging-parameter.jpg)
+
+- add the build step **Satellite Task**
+
+![image](img/satellite-task.jpg) |
+
+- run **Build with parameters**  
+before the build starts, it is now possible to select the package for staging
+
+![image](img/staging-build.jpg) |
+
+- the selected packet should be copied to the target channel
+
+![image](img/staging-success.jpg) |
+
+  
+ 
 
 Updating Config Files
 ---------------------
-todo ...
+Configuration files management is a nice feature of the RHN Satellite. Unfortunately, there are no different roles for editing of config channels.
+
+**Satelllite User Management:**
+
+![image](img/sat-user-permissions.jpg) |
+
+With the encapsulation of editing configuration files in a build step, it is possible to use Jenkins User Management for reading/changing certain configuration files.  
+This also works with a parameterized build:
+
+- create a *parameterized build* and add a **Satellite ConfigStaging** parameter
+
+![image](img/update-cfg-parameter.jpg)
+
+- add the build step **Satellite Task**
+
+- run **Build with parameters**  
+before the build starts, it is now possible to edit the configuration file
+
+![image](img/update-cfg-build.jpg) |
+
+- run as **Build with parameter**
+
+![image](img/update-cfg-success.jpg) |
+
+
 
 Executing Scripts
 -----------------
-todo ...
+For executing of scripts on a system group (for example after pushing a new package version to an channel), there is the build step **Satellite Remote Script**.  
+
+Here is an example to run an build step standalone or after an **Satellite Push**:
+
+- create a *parameterized build* and add a **String Parameter** parameter
+
+![image](img/script-parameter.jpg)
+
+- add the build step **Satellite Remote Script**  
+  use Satellite Schedule or SSH 
+
+![image](img/script-build.jpg)
+
+- run the build standalone (with parameter) or use it as an **Post Build Step** in other builds
+
+![image](img/script-success.jpg)
+
+
+
+
+
 
 
