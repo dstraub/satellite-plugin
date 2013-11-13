@@ -318,13 +318,13 @@ public class SatelliteConnection {
 
         Object[] groups = call("systemgroup.listSystems", group);
         List<Integer> systemIds = new ArrayList<Integer>();
-        StringBuilder sb = new StringBuilder("schedule update for ");
+        StringBuilder sb = new StringBuilder("schedule script for ");
         for (Object o : groups) {
             Map<String, Object> system = (Map<String, Object>) o;
             systemIds.add((Integer) system.get("id"));
             sb.append(system.get("hostname")).append(' ');
         }
-        long startTime = new Date().getTime() + 60 * 1000;
+        long startTime = new Date().getTime(); // + 60 * 1000;
         String runScript = script.startsWith("#!/") ? script : "#!/bin/sh\n" + script;
         Integer scriptId = call("system.scheduleScriptRun", systemIds, "root", "root", new Integer(300), runScript, new Date(startTime));
         sb.append(", script-id=").append(scriptId);

@@ -57,17 +57,16 @@ To copy packages between software channel:
 
 - add the build step **Satellite Task**
 
-![image](img/satellite-task.jpg) |
+![image](img/satellite-task.jpg)
 
 - run **Build with parameters**  
 before the build starts, it is now possible to select the package for staging
 
-![image](img/staging-build.jpg) |
+![image](img/staging-build.jpg) 
 
 - the selected packet should be copied to the target channel
 
-![image](img/staging-success.jpg) |
-
+![image](img/staging-success.jpg) 
   
  
 
@@ -121,6 +120,6 @@ Here is an example to run an build step standalone or after an **Satellite Push*
 
 
 
-
+Have fun, Daniel !
 
 

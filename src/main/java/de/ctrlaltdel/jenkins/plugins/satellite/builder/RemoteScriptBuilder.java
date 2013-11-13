@@ -54,7 +54,7 @@ public class RemoteScriptBuilder extends Builder {
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         logBuild(listener);
-        String runtimeScript = setScriptVariables(build.getBuildVariables());
+        String runtimeScript = setScriptVariables(listener.getLogger(), build.getBuildVariables());
         if (useSSH) {
             for (String host : SatelliteConnection.create().forOneCall().listHosts(group)) {
                 int result = executeSSH(host, listener.getLogger(), runtimeScript);
@@ -71,13 +71,14 @@ public class RemoteScriptBuilder extends Builder {
     /**
      * setScriptVariables
      */
-    private String setScriptVariables(Map<String, String> vars) {
+    private String setScriptVariables(PrintStream ps, Map<String, String> vars) {
         StringBuilder sb = new StringBuilder();
         for (String variable : vars.keySet()) {
             if (variable.startsWith("_")) {
                 continue;
             }
             if (script.contains("$" + variable)) {
+                ps.println("[INFO] insert '" + variable + '=' + vars.get(variable) + '\''); 
                 sb.append(variable + "=\"" + vars.get(variable) + "\"\n");
             }
         }
@@ -105,7 +106,7 @@ public class RemoteScriptBuilder extends Builder {
         PrintStream ps = listener.getLogger();
         ps.println("[INFO] ------------------------------------------------------------------------");
         ps.println("[INFO] Run remote script on '" + group + '\'');
-        ps.println("[INFO] ------------------------------------------------------------------------\n");
+        ps.println("[INFO] ------------------------------------------------------------------------");
     }
 
     /**
