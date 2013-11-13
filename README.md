@@ -33,15 +33,15 @@ Configuration is done via the Jenkins main configuration page:
 
 Push Packages
 -------------
-There is a special build step to push new packages in an software channel.
+There is a special build step to push new packages in a software channel.
 
 ![image](img/push-build.jpg)
 
-- "Path Pattern" is the path to search for new RPM packages (is a ant-like pattern, no regular expression)
+- "Path Pattern" is the path to search for new RPM packages (ant-like pattern, no regular expression)
 
 ![image](img/push-success.jpg)
 
-The name of the pushed package is stored in the build variables with the key **RPM_PACKAGE** and can be used in other build steps (for example executing an script).
+The name of the pushed package is stored in the build variables with the key **RPM_PACKAGE** and can be used in other build steps (for example executing remote script).
 
 Staging Packages
 ----------------
@@ -79,16 +79,16 @@ Configuration files management is a nice feature of the RHN Satellite. Unfortuna
 ![image](img/sat-user-permissions.jpg)
 
 With the encapsulation of editing configuration files in a build step, it is possible to use Jenkins User Management for reading/changing certain configuration files.  
-This also works with a parameterized build:
-
-- create a *parameterized build* and add a **Satellite ConfigStaging** parameter
+This also works using a parameterized build:
+ 
+- create a *parameterized build* and add a **Satellite Update Configuration** parameter
 
 ![image](img/update-cfg-parameter.jpg)
 
 - add the build step **Satellite Task**
 
 - run **Build with parameters**  
-before the build starts, it is now possible to edit the configuration file
+before the build starts, it is possible to edit the configuration file
 
 ![image](img/update-cfg-build.jpg)
 
