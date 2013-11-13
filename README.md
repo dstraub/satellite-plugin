@@ -44,7 +44,7 @@ There is a special build step to push new packages in an software channel.
 The name of the pushed package is stored in the build variables with the key **RPM_PACKAGE** and can be used in other build steps (for example executing an script).
 
 Staging Packages
--------------
+----------------
 Staging (in this context) is the process when packets are copied from one channel to another. For if a application has passed all qualitiy assurance tests, then this package is ready for production and should be copied to the production software channel.
 
 For such tasks we have an 'generic' build step **Satellite Task**. This build steps searches in the current build variables for knowing keys and performs the associated action. For creating such variables in a build we have some customized *build parameters*
@@ -76,7 +76,7 @@ Configuration files management is a nice feature of the RHN Satellite. Unfortuna
 
 **Satelllite User Management:**
 
-![image](img/sat-user-permissions.jpg) |
+![image](img/sat-user-permissions.jpg)
 
 With the encapsulation of editing configuration files in a build step, it is possible to use Jenkins User Management for reading/changing certain configuration files.  
 This also works with a parameterized build:
@@ -90,11 +90,11 @@ This also works with a parameterized build:
 - run **Build with parameters**  
 before the build starts, it is now possible to edit the configuration file
 
-![image](img/update-cfg-build.jpg) |
+![image](img/update-cfg-build.jpg)
 
 - run as **Build with parameter**
 
-![image](img/update-cfg-success.jpg) |
+![image](img/update-cfg-success.jpg)
 
 
 
@@ -117,9 +117,5 @@ Here is an example to run an build step standalone or after an **Satellite Push*
 
 ![image](img/script-success.jpg)
 
-
-
-
-Have fun, Daniel !
 
 
