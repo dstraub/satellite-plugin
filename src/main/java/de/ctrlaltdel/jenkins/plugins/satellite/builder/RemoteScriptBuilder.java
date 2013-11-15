@@ -8,8 +8,10 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -17,11 +19,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.servlet.ServletException;
+
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.jcraft.jsch.ChannelExec;
@@ -37,18 +42,20 @@ import de.ctrlaltdel.jenkins.plugins.satellite.PluginConfiguration;
  */
 public class RemoteScriptBuilder extends Builder {
 
-    private final String group;
+    private final String systemGroup;
     private final String script;
+    private final String user;
     private final boolean useSSH;
 
     private transient JSch jsch;
 
     @DataBoundConstructor
-    public RemoteScriptBuilder(String group, String script, boolean useSSH) {
+    public RemoteScriptBuilder(String systemGroup, String user, String script, boolean useSSH) {
         super();
-        this.group = group;
-        this.script = script;
-        this.useSSH = useSSH;
+        this.systemGroup = systemGroup;
+        this.user        = user;
+        this.script      = script;
+        this.useSSH      = useSSH;
     }
 
     @Override
@@ -56,14 +63,14 @@ public class RemoteScriptBuilder extends Builder {
         logBuild(listener);
         String runtimeScript = setScriptVariables(listener.getLogger(), build.getBuildVariables());
         if (useSSH) {
-            for (String host : SatelliteConnection.create().forOneCall().listHosts(group)) {
+            for (String host : SatelliteConnection.create().forOneCall().listHosts(systemGroup)) {
                 int result = executeSSH(host, listener.getLogger(), runtimeScript);
                 if (result != 0) {
                     build.setResult(Result.FAILURE);
                 }
             }
         } else {
-            SatelliteConnection.create().forOneCall().logger(listener).remoteScript(group, runtimeScript);
+            SatelliteConnection.create().forOneCall().logger(listener).remoteScript(systemGroup, user, runtimeScript);
         }
         return true;
     }
@@ -87,14 +94,15 @@ public class RemoteScriptBuilder extends Builder {
         return sb.toString();
     }
 
-    public String getGroup() {
-        return group;
-    }
-
+	public String getSystemGroup() {
+		return systemGroup;
+	}
+	public String getUser() {
+		return user;
+	}
     public String getScript() {
         return script;
     }
-
     public boolean isUseSSH() {
         return useSSH;
     }
@@ -105,7 +113,7 @@ public class RemoteScriptBuilder extends Builder {
     private void logBuild(BuildListener listener) {
         PrintStream ps = listener.getLogger();
         ps.println("[INFO] ------------------------------------------------------------------------");
-        ps.println("[INFO] Run remote script on '" + group + '\'');
+        ps.println("[INFO] Run remote script on '" + systemGroup + '\'');
         ps.println("[INFO] ------------------------------------------------------------------------");
     }
 
@@ -198,11 +206,19 @@ public class RemoteScriptBuilder extends Builder {
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;
         }
+        
+        public FormValidation doCheckUser(@QueryParameter String value) throws IOException, ServletException {
+            if (StringUtils.isEmpty(value)) {
+                return FormValidation.error("User required");
+            }
+            if (value.equals("root")) {
+            	PluginConfiguration pluginConfiguration = (PluginConfiguration) Jenkins.getInstance().getDescriptorOrDie(PluginConfiguration.class);
+            	return pluginConfiguration.isRootAllowed() ? FormValidation.ok() : FormValidation.error("Root not allowed");
+            }
+            return FormValidation.ok();
+        }
 
-        /**
-         * doFillGroupItems
-         */
-        public ListBoxModel doFillGroupItems() {
+        public ListBoxModel doFillSystemGroupItems() {
             List<String> groups = SatelliteConnection.create().forOneCall().listGroups();
             ListBoxModel listBoxModel = new ListBoxModel();
             listBoxModel.add("");

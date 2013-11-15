@@ -6,14 +6,21 @@ import hudson.model.BuildListener;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import jenkins.model.Jenkins;
 
@@ -81,6 +88,10 @@ public class SatelliteConnection {
         config.setServerURL(configuration.getRpcUrl());
         config.setEnabledForExtensions(true);
 
+		if (configuration.getRpcUrl().getProtocol().equals("https")) {
+			initializeSSLContext();
+		}
+        
         client = new XmlRpcClient();
         client.setConfig(config);
 
@@ -309,10 +320,37 @@ public class SatelliteConnection {
 
     }
 
+    private void initializeSSLContext() {
+    	try {
+			TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+				public X509Certificate[] getAcceptedIssuers() {
+					return null;
+				}
+				public void checkClientTrusted(X509Certificate[] certs, String authType) {
+				}
+				public void checkServerTrusted(X509Certificate[] certs, String authType) {
+				}
+			} };
+
+			SSLContext sc = SSLContext.getInstance("SSL");
+			HostnameVerifier hv = new HostnameVerifier() {
+				public boolean verify(String host, SSLSession session) {
+					return true;
+				}
+			};
+
+			sc.init(null, trustAllCerts, new java.security.SecureRandom());
+			HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+			HttpsURLConnection.setDefaultHostnameVerifier(hv);
+		} catch (Exception x) {
+			throw new IllegalStateException(x);
+		}
+    	
+    }
     /**
      * remoteScript
      */
-    public void remoteScript(String group, String script) {
+    public void remoteScript(String group, String user, String script) {
         boolean wasOneCall = oneCall;
         oneCall = false;
 
@@ -326,7 +364,7 @@ public class SatelliteConnection {
         }
         long startTime = new Date().getTime(); // + 60 * 1000;
         String runScript = script.startsWith("#!/") ? script : "#!/bin/sh\n" + script;
-        Integer scriptId = call("system.scheduleScriptRun", systemIds, "root", "root", new Integer(300), runScript, new Date(startTime));
+        Integer scriptId = call("system.scheduleScriptRun", systemIds, user, user, new Integer(300), runScript, new Date(startTime));
         sb.append(", script-id=").append(scriptId);
         info(sb.toString());
 
@@ -435,7 +473,7 @@ public class SatelliteConnection {
 
     public static void main(String[] args) {
         try {
-            PluginConfiguration configuration = new PluginConfiguration().url("http://satellite.local").user("jenkins").password("jenkins");
+            PluginConfiguration configuration = new PluginConfiguration().url("https://satanas-s01").user("dstraub").password("dstraub");
             SatelliteConnection connection = SatelliteConnection.from(configuration).login();
 
             // Object o = connection.configContents("jboss-dev-config",
@@ -455,4 +493,6 @@ public class SatelliteConnection {
         }
     }
 
+    
+    
 }

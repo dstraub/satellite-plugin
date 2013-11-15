@@ -5,6 +5,8 @@ import hudson.util.FormValidation;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -31,6 +33,7 @@ public class PluginConfiguration extends GlobalConfiguration {
     private String sshUser;
     private String sshPassword;
     private String sshKeyPath;
+    private boolean rootAllowed;
 
     private transient URL satelliteUrl;
     private transient URL rpcUrl;
@@ -109,12 +112,18 @@ public class PluginConfiguration extends GlobalConfiguration {
      */
     public FormValidation doTestConnection(@QueryParameter("url") String url, @QueryParameter("user") String user, @QueryParameter("password") String password) throws IOException, ServletException {
         try {
+        	this.url = url;
+        	this.user = user;
+        	this.password = password;
+        	initialize();
             SatelliteConnection connection = SatelliteConnection.from(this);
             connection.login();
             connection.logout();
             return FormValidation.ok("Success");
         } catch (Exception x) {
-            return FormValidation.error(x.getMessage());
+        	StringWriter sw = new StringWriter();
+        	x.printStackTrace(new PrintWriter(sw));
+            return FormValidation.error(sw.toString());
         }
     }
 
@@ -147,14 +156,15 @@ public class PluginConfiguration extends GlobalConfiguration {
 
     @Override
     public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-        url = formData.getString("url");
-        user = formData.getString("user");
-        password = formData.getString("password");
+        url               = formData.getString("url");
+        user              = formData.getString("user");
+        password          = formData.getString("password");
         configPathPattern = formData.getString("configPathPattern");
-        sshUser = formData.getString("sshUser");
-        sshPassword = formData.getString("sshPassword");
-        sshKeyPath = formData.getString("sshKeyPath");
-
+        sshUser           = formData.getString("sshUser");
+        sshPassword       = formData.getString("sshPassword");
+        sshKeyPath        = formData.getString("sshKeyPath");
+        rootAllowed       = formData.getBoolean("rootAllowed");
+        
         initialize();
         save();
         return super.configure(req, formData);
@@ -192,6 +202,10 @@ public class PluginConfiguration extends GlobalConfiguration {
     public String getSshUser() {
         return sshUser;
     }
+    
+    public boolean isRootAllowed() {
+		return rootAllowed;
+	}
 
     public String getSshPassword() {
         return sshPassword;

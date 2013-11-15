@@ -22,6 +22,10 @@
     	<f:textbox />
   	</f:entry>
 
+  	<f:entry title="Root allowed for remote scripts" field="rootAllowed">
+    	<f:checkbox />
+  	</f:entry>
+  	
   	<f:entry title="SSH-User" field="sshUser">
     	<f:textbox />
   	</f:entry>

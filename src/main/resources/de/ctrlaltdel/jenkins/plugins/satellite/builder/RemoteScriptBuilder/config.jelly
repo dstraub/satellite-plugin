@@ -2,13 +2,18 @@
 	
 	<!-- RemoteScriptBuilder -->
 	
-	<f:entry title="Group" field="group">
+	<f:entry title="System-Group" field="systemGroup">
 		<f:select />
   	</f:entry>  
 
+	<f:entry title="User" field="user">
+		<f:textbox />
+  	</f:entry>  
+  	
 	<f:entry title="Script" field="script">
     	<f:expandableTextbox />
   	</f:entry>
+
 
 	<f:entry title="Use SSH" field="useSSH">
     	<f:checkbox />
