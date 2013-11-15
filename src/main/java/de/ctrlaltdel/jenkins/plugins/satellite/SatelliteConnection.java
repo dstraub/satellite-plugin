@@ -4,8 +4,10 @@ import hudson.FilePath;
 import hudson.model.BuildListener;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,10 +27,14 @@ import javax.net.ssl.X509TrustManager;
 import jenkins.model.Jenkins;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -37,6 +43,7 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 /**
  * SatelliteConnection
+ * 
  * @author ds
  */
 public class SatelliteConnection {
@@ -88,10 +95,10 @@ public class SatelliteConnection {
         config.setServerURL(configuration.getRpcUrl());
         config.setEnabledForExtensions(true);
 
-		if (configuration.getRpcUrl().getProtocol().equals("https")) {
-			initializeSSLContext();
-		}
-        
+        if (configuration.isSSL()) {
+            initializeSSLContext();
+        }
+
         client = new XmlRpcClient();
         client.setConfig(config);
 
@@ -253,12 +260,53 @@ public class SatelliteConnection {
     }
 
     /**
+     * remoteScript
+     */
+    public void remoteScript(String group, String user, String script) {
+        boolean wasOneCall = oneCall;
+        oneCall = false;
+
+        Object[] groups = call("systemgroup.listSystems", group);
+        List<Integer> systemIds = new ArrayList<Integer>();
+        StringBuilder sb = new StringBuilder("schedule script for ");
+        for (Object o : groups) {
+            Map<String, Object> system = (Map<String, Object>) o;
+            systemIds.add((Integer) system.get("id"));
+            sb.append(system.get("hostname")).append(' ');
+        }
+        long startTime = new Date().getTime(); // + 60 * 1000;
+        String runScript = script.startsWith("#!/") ? script : "#!/bin/sh\n" + script;
+        Integer scriptId = call("system.scheduleScriptRun", systemIds, user, user, new Integer(300), runScript, new Date(startTime));
+        sb.append(", script-id=").append(scriptId);
+        info(sb.toString());
+
+        if (wasOneCall) {
+            logout();
+        }
+    }
+
+    /**
+     * listHosts
+     */
+    public List<String> listHosts(String group) {
+        Object[] systems = call("systemgroup.listSystems", group);
+        List<String> hosts = new ArrayList<String>(systems.length);
+        for (Object o : systems) {
+            Map<String, Object> system = (Map<String, Object>) o;
+            hosts.add((String) system.get("hostname"));
+        }
+        return hosts;
+    }
+    
+    /**
      * push
      */
     public NVR push(FilePath filePath, String channel) {
 
         NVR nvr = new NVR(filePath.getName());
         try {
+            initializeSSLContext();
+
             HttpPost httpPost = new HttpPost(configuration.getUrl() + "/PACKAGE-PUSH");
             httpPost.setHeader("X-RHN-Upload-Auth-Session", auth);
             httpPost.setHeader("X-RHN-Upload-File-Checksum-Type", "md5");
@@ -273,8 +321,12 @@ public class SatelliteConnection {
             httpPost.setEntity(new InputStreamEntity(filePath.read(), filePath.length(), ContentType.create("application/x-rpm")));
 
             info("upload " + filePath);
-
-            HttpResponse response = new DefaultHttpClient().execute(httpPost);
+            
+            DefaultHttpClient httpClient = new DefaultHttpClient();
+            if (configuration.isSSL()) {
+                configureHttps(httpClient);
+            }
+            HttpResponse response = httpClient.execute(httpPost);
             if (response.getStatusLine().getStatusCode() == 200) {
                 info("upload was successful");
             } else {
@@ -321,69 +373,48 @@ public class SatelliteConnection {
     }
 
     private void initializeSSLContext() {
-    	try {
-			TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-				public X509Certificate[] getAcceptedIssuers() {
-					return null;
-				}
-				public void checkClientTrusted(X509Certificate[] certs, String authType) {
-				}
-				public void checkServerTrusted(X509Certificate[] certs, String authType) {
-				}
-			} };
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
 
-			SSLContext sc = SSLContext.getInstance("SSL");
-			HostnameVerifier hv = new HostnameVerifier() {
-				public boolean verify(String host, SSLSession session) {
-					return true;
-				}
-			};
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
 
-			sc.init(null, trustAllCerts, new java.security.SecureRandom());
-			HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-			HttpsURLConnection.setDefaultHostnameVerifier(hv);
-		} catch (Exception x) {
-			throw new IllegalStateException(x);
-		}
-    	
-    }
-    /**
-     * remoteScript
-     */
-    public void remoteScript(String group, String user, String script) {
-        boolean wasOneCall = oneCall;
-        oneCall = false;
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+            } };
 
-        Object[] groups = call("systemgroup.listSystems", group);
-        List<Integer> systemIds = new ArrayList<Integer>();
-        StringBuilder sb = new StringBuilder("schedule script for ");
-        for (Object o : groups) {
-            Map<String, Object> system = (Map<String, Object>) o;
-            systemIds.add((Integer) system.get("id"));
-            sb.append(system.get("hostname")).append(' ');
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+                public boolean verify(String host, SSLSession session) {
+                    return true;
+                }
+            };
+
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+        } catch (Exception x) {
+            throw new IllegalStateException(x);
         }
-        long startTime = new Date().getTime(); // + 60 * 1000;
-        String runScript = script.startsWith("#!/") ? script : "#!/bin/sh\n" + script;
-        Integer scriptId = call("system.scheduleScriptRun", systemIds, user, user, new Integer(300), runScript, new Date(startTime));
-        sb.append(", script-id=").append(scriptId);
-        info(sb.toString());
 
-        if (wasOneCall) {
-            logout();
-        }
     }
 
-    /**
-     * listHosts
-     */
-    public List<String> listHosts(String group) {
-        Object[] systems = call("systemgroup.listSystems", group);
-        List<String> hosts = new ArrayList<String>(systems.length);
-        for (Object o : systems) {
-            Map<String, Object> system = (Map<String, Object>) o;
-            hosts.add((String) system.get("hostname"));
+    private void configureHttps(DefaultHttpClient httpClient) {
+        TrustStrategy trustStrategy = new TrustStrategy() {
+            public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                return true;
+            }
+        };
+        try {
+            SSLSocketFactory sslSocketFactory = new SSLSocketFactory(trustStrategy, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            Scheme https = new Scheme("https", 443, sslSocketFactory);
+            httpClient.getConnectionManager().getSchemeRegistry().register(https);
+        } catch (Exception x) {
+            throw new IllegalStateException(x);
         }
-        return hosts;
     }
 
     /**
@@ -473,26 +504,23 @@ public class SatelliteConnection {
 
     public static void main(String[] args) {
         try {
-            PluginConfiguration configuration = new PluginConfiguration().url("https://satanas-s01").user("dstraub").password("dstraub");
+            PluginConfiguration configuration = new PluginConfiguration().url("https://satellite.local").user("admin").password("admin123");
             SatelliteConnection connection = SatelliteConnection.from(configuration).login();
 
-            // Object o = connection.configContents("jboss-dev-config",
-            // "/etc/jbossas/sample-app.properties");
-            // System.out.println(o);
-            List<String> channels = connection.listChannels();
-            for (String ch : channels) {
-                System.out.println(ch);
-            }
-            //
-            // String rpm = "/Users/ds/jmx4perl-1.07-1.noarch.rpm";
-            // String channel = "jboss-dev";
-            // connection.logout();
+            // List<String> channels = connection.listChannels();
+            // for (String ch : channels) {
+            // System.out.println(ch);
+            // }
+
+            String localPath = "/Users/ds/Work/markant/stuff/jmx4perl-1.07-1.noarch.rpm";
+            FilePath filePath = new FilePath(new File(localPath));
+            String channel = "jboss-dev";
+            connection.push(filePath, channel);
+            connection.logout();
 
         } catch (Exception x) {
             x.printStackTrace();
         }
     }
 
-    
-    
 }

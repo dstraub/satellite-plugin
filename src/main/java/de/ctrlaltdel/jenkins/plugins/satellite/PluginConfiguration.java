@@ -231,4 +231,11 @@ public class PluginConfiguration extends GlobalConfiguration {
         return this;
     }
 
+    public boolean isSSL() {
+        if (satelliteUrl != null) {
+            initialize();
+        }
+        return satelliteUrl.getProtocol().equals("https");
+    }
+
 }
