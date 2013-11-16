@@ -4,7 +4,6 @@ import hudson.FilePath;
 import hudson.model.BuildListener;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.security.cert.CertificateException;
@@ -12,7 +11,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -27,7 +25,6 @@ import javax.net.ssl.X509TrustManager;
 import jenkins.model.Jenkins;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -48,6 +45,8 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
  */
 public class SatelliteConnection {
 
+    public static final String ATTR_PKG_NAME = "packageName"; 
+    
     private final PluginConfiguration configuration;
     private String auth;
     private XmlRpcClient client;
@@ -126,14 +125,6 @@ public class SatelliteConnection {
     }
 
     /**
-     * packagesFindByNvr
-     */
-    public Map<String, Object> listPackages(NVR nvr) {
-        Object result = call("packages.findByNvrea", nvr.getName(), nvr.getVersion(), nvr.getRelease(), "", "noarch");
-        return from(result);
-    }
-
-    /**
      * addPackages
      */
     public boolean addPackage(String channel, Integer id) {
@@ -145,10 +136,9 @@ public class SatelliteConnection {
      * listChannels
      */
     public List<String> listChannels() {
-        Object[] channels = call("channel.listMyChannels");
+        Map<String, Object>[] channels = call("channel.listMyChannels");
         List<String> result = new ArrayList<String>(channels.length);
-        for (Object o : channels) {
-            Map<String, Object> map = (Map<String, Object>) o;
+        for (Map<String, Object> map : channels) {
             result.add((String) map.get("label"));
         }
         return result;
@@ -158,10 +148,9 @@ public class SatelliteConnection {
      * listConfigChannels
      */
     public List<String> listConfigChannels() {
-        Object[] channels = call("configchannel.listGlobals");
+        Map<String, Object>[] channels = call("configchannel.listGlobals");
         List<String> result = new ArrayList<String>(channels.length);
-        for (Object o : channels) {
-            Map<String, Object> map = (Map<String, Object>) o;
+        for (Map<String, Object> map : channels) {
             result.add((String) map.get("label"));
         }
         return result;
@@ -171,10 +160,9 @@ public class SatelliteConnection {
      * listGroups
      */
     public List<String> listGroups() {
-        Object[] groups = call("systemgroup.listAllGroups");
+        Map<String, Object>[] groups = call("systemgroup.listAllGroups");
         List<String> result = new ArrayList<String>(groups.length);
-        for (Object o : groups) {
-            Map<String, Object> map = (Map<String, Object>) o;
+        for (Map<String, Object> map : groups) {
             if (0 < (Integer) map.get("system_count")) {
                 result.add((String) map.get("name"));
             }
@@ -185,27 +173,46 @@ public class SatelliteConnection {
     /**
      * listPackages
      */
-    public Map<String, Integer> listPackages(String channel) {
-        Object[] packages = call("channel.software.listAllPackages", channel);
-        Map<String, Integer> result = new HashMap<String, Integer>();
-        for (Object o : packages) {
-            Map<String, Object> map = (Map<String, Object>) o;
+    public List<Map<String, Object>> listPackages(String channel) {
+        Map<String, Object>[] packages = call("channel.software.listAllPackages", channel);
+        for (Map<String, Object> map : packages) {
             String pkgName = (String) map.get("name") + '-' + map.get("version") + '-' + map.get("release");
-            result.put(pkgName, (Integer) map.get("id"));
+            map.put("packageName", pkgName);
         }
-        return result;
+        return Arrays.asList(packages);
     }
-
+    
+    /**
+     * removePackages
+     */
+    public boolean removePackages(String channel, List<Integer> pkgIds) {
+        Integer result = call("channel.software.removePackages", channel, pkgIds);
+        if (result != 1) {
+            return false;
+        }
+        info(pkgIds.size() + " packages removed from channel '" + channel + "'");
+        for (Integer id : pkgIds) {
+            try {
+                int removeResult = call("packages.removePackage", id);
+                if (removeResult != 1) {
+                    error("deletion of package " + id + "failed");
+                }
+            } catch (Exception x) {
+                error("deletion of package " + id + " failed: " + x.getMessage());
+            }
+        }
+        return result == 1;
+    }
+    
     /**
      * listConfigPaths
      */
     public List<String> listConfigPaths(String configChannel) {
-        Object[] channels = call("configchannel.listFiles", configChannel);
+        Map<String, Object>[] channels = call("configchannel.listFiles", configChannel);
         Pattern pattern = StringUtils.isEmpty(configuration.getConfigPathPattern()) ? null : Pattern.compile(configuration.getConfigPathPattern());
 
         List<String> result = new ArrayList<String>(channels.length);
-        for (Object o : channels) {
-            Map<String, Object> map = (Map<String, Object>) o;
+        for (Map<String, Object> map : channels) {
             String path = (String) map.get("path");
             boolean match = pattern == null ? true : pattern.matcher(path).matches();
             if (match) {
@@ -219,8 +226,8 @@ public class SatelliteConnection {
      * readConfig
      */
     public String readConfig(String configChannel, String configPath) {
-        Object[] fileInfos = call("configchannel.lookupFileInfo", configChannel, Arrays.asList(configPath));
-        Map<String, Object> revision = (Map<String, Object>) fileInfos[0];
+        Map<String, Object>[] fileInfos = call("configchannel.lookupFileInfo", configChannel, Arrays.asList(configPath));
+        Map<String, Object> revision = fileInfos[0];
         String contents = (String) revision.get("contents");
         return ((Boolean) revision.get("contents_enc64")) ? new String(Base64.decodeBase64(contents)) : contents;
     }
@@ -231,8 +238,8 @@ public class SatelliteConnection {
     public boolean updateConfig(String configChannel, String configPath, String contents) {
         boolean wasOneCall = oneCall;
         oneCall = false;
-        Object[] fileInfos = call("configchannel.lookupFileInfo", configChannel, Arrays.asList(configPath));
-        Map<String, Object> revision = (Map<String, Object>) fileInfos[0];
+        Map<String, Object>[] fileInfos = call("configchannel.lookupFileInfo", configChannel, Arrays.asList(configPath));
+        Map<String, Object> revision = fileInfos[0];
         Boolean encoded = (Boolean) revision.get("contents_enc64");
         revision.put("contents", encoded ? Base64.encodeBase64String(contents.getBytes()) : contents);
         revision.put("revision", ((Integer) revision.get("revision")) + 1);
@@ -266,11 +273,10 @@ public class SatelliteConnection {
         boolean wasOneCall = oneCall;
         oneCall = false;
 
-        Object[] groups = call("systemgroup.listSystems", group);
+        Map<String, Object>[] groups = call("systemgroup.listSystems", group);
         List<Integer> systemIds = new ArrayList<Integer>();
         StringBuilder sb = new StringBuilder("schedule script for ");
-        for (Object o : groups) {
-            Map<String, Object> system = (Map<String, Object>) o;
+        for (Map<String, Object> system : groups) {
             systemIds.add((Integer) system.get("id"));
             sb.append(system.get("hostname")).append(' ');
         }
@@ -289,10 +295,9 @@ public class SatelliteConnection {
      * listHosts
      */
     public List<String> listHosts(String group) {
-        Object[] systems = call("systemgroup.listSystems", group);
+        Map<String, Object>[] systems = call("systemgroup.listSystems", group);
         List<String> hosts = new ArrayList<String>(systems.length);
-        for (Object o : systems) {
-            Map<String, Object> system = (Map<String, Object>) o;
+        for (Map<String, Object> system : systems) {
             hosts.add((String) system.get("hostname"));
         }
         return hosts;
@@ -339,8 +344,11 @@ public class SatelliteConnection {
             throw new IllegalStateException(x);
         }
 
-        Map<String, Object> data = listPackages(nvr);
-        int id = (Integer) data.get("id");
+        Map<String, Object>[] packages = call("packages.findByNvrea", nvr.getName(), nvr.getVersion(), nvr.getRelease(), "", "noarch");
+        if (packages.length != 1) {
+            throw new IllegalStateException("non unique nvr " + nvr);
+        }
+        int id = (Integer) packages[0].get("id");
         info("package-id: " + id);
 
         boolean result = addPackage(channel, id);
@@ -350,28 +358,8 @@ public class SatelliteConnection {
     }
 
     /**
-     * from
+     * initializeSSLContext
      */
-    private Map<String, Object> from(Object result) {
-        if (result instanceof Map) {
-            return (Map<String, Object>) result;
-        }
-        if (result.getClass().isArray()) {
-            return from(((Object[]) result)[0]);
-        }
-        return new HashMap<String, Object>();
-    }
-
-    /**
-     * dump
-     */
-    private void dump(Map<String, Object> result) {
-        for (Map.Entry<String, Object> me : result.entrySet()) {
-            System.out.println(me.getKey() + ' ' + me.getValue());
-        }
-
-    }
-
     private void initializeSSLContext() {
         try {
             TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
@@ -402,6 +390,9 @@ public class SatelliteConnection {
 
     }
 
+    /**
+     * configureHttps
+     */
     private void configureHttps(DefaultHttpClient httpClient) {
         TrustStrategy trustStrategy = new TrustStrategy() {
             public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
@@ -475,7 +466,18 @@ public class SatelliteConnection {
         }
         T result = null;
         try {
-            result = (T) client.execute(method, params);
+            Object obj = client.execute(method, params);
+            if (obj.getClass().isArray()) {
+                Object[] objArray = (Object[]) obj;
+                if (0 < objArray.length && objArray[0] instanceof Map) {
+                    Map<?, ?>[] mapArray = new Map<?, ?>[objArray.length];
+                    System.arraycopy(objArray, 0, mapArray, 0, objArray.length);
+                    result = (T) mapArray;
+                }
+            } else {
+                result = (T) obj;
+            }
+            
         } catch (Exception x) {
             throw new IllegalStateException(x);
         }
@@ -500,27 +502,6 @@ public class SatelliteConnection {
         client = null;
         auth = null;
         oneCall = false;
-    }
-
-    public static void main(String[] args) {
-        try {
-            PluginConfiguration configuration = new PluginConfiguration().url("https://satellite.local").user("admin").password("admin123");
-            SatelliteConnection connection = SatelliteConnection.from(configuration).login();
-
-            // List<String> channels = connection.listChannels();
-            // for (String ch : channels) {
-            // System.out.println(ch);
-            // }
-
-            String localPath = "/Users/ds/Work/markant/stuff/jmx4perl-1.07-1.noarch.rpm";
-            FilePath filePath = new FilePath(new File(localPath));
-            String channel = "jboss-dev";
-            connection.push(filePath, channel);
-            connection.logout();
-
-        } catch (Exception x) {
-            x.printStackTrace();
-        }
     }
 
 }

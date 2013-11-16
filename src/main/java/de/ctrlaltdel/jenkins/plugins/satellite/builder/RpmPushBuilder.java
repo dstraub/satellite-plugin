@@ -148,16 +148,10 @@ public class RpmPushBuilder extends Builder {
     @Extension
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        /**
-         * getDisplayName
-         */
         public String getDisplayName() {
             return "Satellite RPM Push";
         }
 
-        /**
-         * doCheckPathPattern
-         */
         public FormValidation doCheckPathPattern(@AncestorInPath AbstractProject project, @QueryParameter String value) throws IOException {
             if (StringUtils.isEmpty(value)) {
                 return FormValidation.error("Please enter a artifact pattern");

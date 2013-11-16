@@ -2,12 +2,17 @@ package de.ctrlaltdel.jenkins.plugins.satellite;
 
 import hudson.Extension;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import javax.servlet.ServletException;
@@ -18,6 +23,7 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
 
 /**
  * SatelliteConfiguration
@@ -33,6 +39,7 @@ public class PluginConfiguration extends GlobalConfiguration {
     private String sshUser;
     private String sshPassword;
     private String sshKeyPath;
+    private String timezone;
     private boolean rootAllowed;
 
     private transient URL satelliteUrl;
@@ -153,7 +160,20 @@ public class PluginConfiguration extends GlobalConfiguration {
             return FormValidation.error(x.getMessage());
         }
     }
-
+    
+    public ListBoxModel doFillTimezoneItems() {
+        ListBoxModel listBoxModel = new ListBoxModel();
+        List<String> tzStrings = new ArrayList<String>();
+        for (String tz : TimeZone.getAvailableIDs()) {
+            tzStrings.add(tz);
+        }
+        Collections.sort(tzStrings);
+        for (String tz : tzStrings) {
+            listBoxModel.add(tz);
+        }
+        return listBoxModel;
+    }
+    
     @Override
     public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
         url               = formData.getString("url");
@@ -164,6 +184,7 @@ public class PluginConfiguration extends GlobalConfiguration {
         sshPassword       = formData.getString("sshPassword");
         sshKeyPath        = formData.getString("sshKeyPath");
         rootAllowed       = formData.getBoolean("rootAllowed");
+        timezone          = formData.getString("timezone");
         
         initialize();
         save();
@@ -201,6 +222,10 @@ public class PluginConfiguration extends GlobalConfiguration {
 
     public String getSshUser() {
         return sshUser;
+    }
+    
+    public String getTimezone() {
+        return timezone;
     }
     
     public boolean isRootAllowed() {

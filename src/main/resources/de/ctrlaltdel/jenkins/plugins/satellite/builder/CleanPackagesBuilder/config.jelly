@@ -1,0 +1,17 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+	
+	<!-- CleanPackages Builder -->
+	
+	<f:entry title="Package Pattern" field="packagePattern">
+    	<f:textbox />
+  	</f:entry>
+
+  	<f:entry title="Channel" field="channel">
+    	<f:select />
+  	</f:entry>
+
+	<f:entry title="Max. Age (in days)" field="maxAge">
+    	<f:textbox />
+  	</f:entry>
+  
+</j:jelly>

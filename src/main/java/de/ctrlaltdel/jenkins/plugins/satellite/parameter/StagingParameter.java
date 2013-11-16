@@ -32,8 +32,8 @@ import de.ctrlaltdel.jenkins.plugins.satellite.builder.SatelliteTaskBuilder.Sate
  * @author ds
  */
 public class StagingParameter extends SimpleParameterDefinition {
-
-    private Map<String, Integer> packages;
+    
+    private List<Map<String, Object>> packages;
     private final String sourceChannel;
     private final String targetChannel;
     private final String packagePattern;
@@ -55,9 +55,9 @@ public class StagingParameter extends SimpleParameterDefinition {
     @Override
     public ParameterValue createValue(StaplerRequest req, JSONObject jo) {
         StringParameterValue value = req.bindJSON(StringParameterValue.class, jo);
-        for (Map.Entry<String, Integer> me : packages.entrySet()) {
-            if (me.getKey().equals(value.value)) {
-                return new StringParameterValue(value.getName(), new AddPackageTaskParameter(targetChannel, value.value, me.getValue()).toString());
+        for (Map<String, Object> pkgData : packages) {
+            if (pkgData.get(SatelliteConnection.ATTR_PKG_NAME).equals(value.value)) {
+                return new StringParameterValue(value.getName(), new AddPackageTaskParameter(targetChannel, value.value, (Integer) pkgData.get("id")).toString());
             }
         }
         return null;
@@ -65,25 +65,40 @@ public class StagingParameter extends SimpleParameterDefinition {
 
     @Exported
     public List<String> getPackages() {
-        packages = SatelliteConnection.create().forOneCall().listPackages(sourceChannel);
+        SatelliteConnection connection = SatelliteConnection.create().login();
+        packages = connection.listPackages(sourceChannel);
+        List<Map<String, Object>> targetPackages = connection.listPackages(targetChannel);
+        connection.logout();
+        
         List<String> result = new ArrayList<String>(packages.size());
         Pattern pattern = StringUtils.isEmpty(packagePattern) ? null : Pattern.compile(packagePattern);
-        for (String key : packages.keySet()) {
-            if (pattern != null && !pattern.matcher(key).matches()) {
+        for (Map<String, Object> pkgData : packages) {
+            String packageName = (String) pkgData.get(SatelliteConnection.ATTR_PKG_NAME);
+            if (pattern != null && !pattern.matcher(packageName).matches()) {
                 continue;
             }
-            if (!includeSnapShots && key.contains("SNAPSHOT")) {
+            if (!includeSnapShots && packageName.contains("SNAPSHOT")) {
                 continue;
             }
-
-            result.add(key);
+            if (isInTarget(targetPackages, packageName)) {
+                continue;
+            }
+            result.add(packageName);
         }
         return result;
     }
-
-    public String getPackagesText() {
-        packages = SatelliteConnection.create().forOneCall().listPackages(sourceChannel);
-        return StringUtils.join(packages.entrySet(), "\n");
+    
+    /**
+     * isInTarget
+     */
+    private boolean isInTarget(List<Map<String, Object>> targetPackages, String packageName) {
+        for (Map<String, Object> pkgData : targetPackages) {
+            String targetPackageName = (String) pkgData.get(SatelliteConnection.ATTR_PKG_NAME);
+            if (targetPackageName.equals(packageName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String getSourceChannel() {
