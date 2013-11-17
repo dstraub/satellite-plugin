@@ -39,7 +39,7 @@ public class PluginConfiguration extends GlobalConfiguration {
     private String sshUser;
     private String sshPassword;
     private String sshKeyPath;
-    private String timezone;
+//    private String timezone;
     private boolean rootAllowed;
 
     private transient URL satelliteUrl;
@@ -184,7 +184,7 @@ public class PluginConfiguration extends GlobalConfiguration {
         sshPassword       = formData.getString("sshPassword");
         sshKeyPath        = formData.getString("sshKeyPath");
         rootAllowed       = formData.getBoolean("rootAllowed");
-        timezone          = formData.getString("timezone");
+//        timezone          = formData.getString("timezone");
         
         initialize();
         save();
@@ -224,9 +224,9 @@ public class PluginConfiguration extends GlobalConfiguration {
         return sshUser;
     }
     
-    public String getTimezone() {
-        return timezone;
-    }
+//    public String getTimezone() {
+//        return timezone;
+//    }
     
     public boolean isRootAllowed() {
 		return rootAllowed;

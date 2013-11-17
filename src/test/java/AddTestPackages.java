@@ -13,7 +13,7 @@ public class AddTestPackages {
 
     public static void main(String[] args) {
         try {
-            PluginConfiguration configuration = new PluginConfiguration().url("https://satellite.local").user("admin").password("admin123");
+            PluginConfiguration configuration = new PluginConfiguration().url("https://satellite.local").user("jenkins").password("jenkins");
             SatelliteConnection connection = SatelliteConnection.from(configuration).login();
 
             List<String> channels = connection.listChannels();

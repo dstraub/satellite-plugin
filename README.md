@@ -14,6 +14,7 @@ The plugin provides the following functions:
 -  staging - copying packages between software channels
 -  editing and updating configuration files from configuration channels
 -  executing scripts on remote systems within a system group (via Satellite scheduling/osad or ssh)
+-  clean software channels
 
 The plugin does not use external programs, which means it can be used on any machine (without packages like rhnpush, spacewalk-backend-libs).
 
@@ -28,8 +29,9 @@ Configuration is done via the Jenkins main configuration page:
 
 ![image](img/satellite-config.jpg)
 
-- with "Configuration Path Pattern" it is possible to limit access for files from config channels
-- if SSH is used instead of Satellite Scheduling for executing remote commands, user and password/keyfile for system access
+- with *Configuration Path Pattern* it is possible to limit access for files from config channels (it's a regular Expression)
+- *Root allowed for remote scripts"* controls whether the user aaa may be run remote scripts
+- if *SSH* is used instead of Satellite Scheduling for executing remote commands, user and password/keyfile for system access  
 
 Push Packages
 -------------
@@ -117,5 +119,15 @@ Here is an example to run an build step standalone or after an **Satellite Push*
 
 ![image](img/script-success.jpg)
 
+Clean Channel
+=============
+To clean a software channel, for example to remove unuses SNAPSHOT builds, create a periodic job with the build step **Satellite Clean Channel**
 
+![image](img/clean-parameter.jpg)
+
+- *Package Pattern* is a regular expression to match package names in the NVR format
+
+- The Satellite user should have the role "Organization Administrator". Otherwise, the packets are indeed removed from the software channel, but they still exist in the Satellite under "Packages in any channel". In this case a warning appears in the build log.
+
+![image](img/clean-success.jpg)
 

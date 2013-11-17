@@ -62,13 +62,15 @@ public class CleanPackagesBuilder extends Builder {
         logBuild(listener);
         SatelliteConnection connection = null;
         Pattern pattern = packagePattern != null ? Pattern.compile(packagePattern) : null;
-        
-        PluginConfiguration configuration = (PluginConfiguration) Jenkins.getInstance().getDescriptorOrDie(PluginConfiguration.class);
-        TimeZone timeZone = TimeZone.getTimeZone(configuration.getTimezone()); 
+
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        dateFormat.setTimeZone(timeZone);
         
-        Date today = Calendar.getInstance(timeZone).getTime();
+//    I expect jenkins and satellite are in the same timezone              
+//        PluginConfiguration configuration = (PluginConfiguration) Jenkins.getInstance().getDescriptorOrDie(PluginConfiguration.class);
+//        TimeZone timeZone = TimeZone.getTimeZone(configuration.getTimezone()); 
+//        dateFormat.setTimeZone(timeZone);
+        
+        Date today = Calendar.getInstance(/* timeZone */).getTime();
         
         connection = SatelliteConnection.create().logger(listener).login();
         List<Map<String, Object>> packages = connection.listPackages(channel);
