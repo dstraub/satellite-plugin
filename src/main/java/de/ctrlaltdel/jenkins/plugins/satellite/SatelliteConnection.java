@@ -10,6 +10,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -175,6 +176,9 @@ public class SatelliteConnection {
      */
     public List<Map<String, Object>> listPackages(String channel) {
         Map<String, Object>[] packages = call("channel.software.listAllPackages", channel);
+        if (packages == null) {
+            return Collections.EMPTY_LIST;
+        }
         for (Map<String, Object> map : packages) {
             String pkgName = (String) map.get("name") + '-' + map.get("version") + '-' + map.get("release");
             map.put("packageName", pkgName);

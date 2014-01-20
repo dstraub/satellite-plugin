@@ -37,14 +37,15 @@ public class StagingParameter extends SimpleParameterDefinition {
     private final String sourceChannel;
     private final String targetChannel;
     private final String packagePattern;
-    private boolean includeSnapShots;
+    private boolean includeSnapshots;
 
     @DataBoundConstructor
-    public StagingParameter(String sourceChannel, String targetChannel, String packagePattern) {
+    public StagingParameter(String sourceChannel, String targetChannel, String packagePattern, boolean includeSnapshots) {
         super(SatelliteTask.ADD_PACKAGE.name(), "");
         this.sourceChannel = sourceChannel;
         this.targetChannel = targetChannel;
         this.packagePattern = packagePattern;
+        this.includeSnapshots = includeSnapshots;
     }
 
     @Override
@@ -77,7 +78,7 @@ public class StagingParameter extends SimpleParameterDefinition {
             if (pattern != null && !pattern.matcher(packageName).matches()) {
                 continue;
             }
-            if (!includeSnapShots && packageName.contains("SNAPSHOT")) {
+            if (!includeSnapshots && packageName.contains("SNAPSHOT")) {
                 continue;
             }
             if (isInTarget(targetPackages, packageName)) {
@@ -109,8 +110,8 @@ public class StagingParameter extends SimpleParameterDefinition {
         return targetChannel;
     }
 
-    public boolean isIncludeSnapShots() {
-        return includeSnapShots;
+    public boolean isIncludeSnapshots() {
+        return includeSnapshots;
     }
 
     public String getPackagePattern() {
